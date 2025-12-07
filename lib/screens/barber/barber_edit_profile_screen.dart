@@ -6,6 +6,8 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../providers/auth_provider.dart';
+import '../../models/index.dart';
+import '../../services/index.dart';
 
 class BarberEditProfileScreen extends StatefulWidget {
   const BarberEditProfileScreen({super.key});
@@ -26,6 +28,9 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
   late TextEditingController _ratingController;
   bool _isLoading = false;
   List<String> _selectedSpecialties = [];
+  List<Service> _services = [];
+  Barber? _barberDoc;
+  bool _barberNotFound = false;
   final double _rating = 4.5;
 
   // Photo handling
@@ -53,6 +58,34 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
       text: user?.rating?.toString() ?? '',
     );
     _selectedSpecialties = user?.specialties ?? [];
+    // Load barber document to get editable services
+    final barberService = BarberService();
+    () async {
+      try {
+        final uid = user?.uid;
+        if (uid != null) {
+          final barber = await barberService.getBarberById(uid);
+          if (barber != null) {
+            setState(() {
+              _barberDoc = barber;
+              _services = List<Service>.from(barber.services);
+            });
+          } else {
+            setState(() {
+              _barberNotFound = true;
+            });
+          }
+        } else {
+          setState(() {
+            _barberNotFound = true;
+          });
+        }
+      } catch (_) {
+        setState(() {
+          _barberNotFound = true;
+        });
+      }
+    }();
   }
 
   @override
@@ -178,6 +211,31 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
       if (!mounted) return;
 
       if (ok) {
+        // Attempt to persist barber services to Firestore (if barber doc exists)
+        if (_barberDoc != null) {
+          try {
+            final barberService = BarberService();
+            final updatedBarber = _barberDoc!.copyWith(
+              services: _services,
+              shopName: shopId.isNotEmpty ? shopId : _barberDoc!.shopName,
+              ownerName: name.isNotEmpty ? name : _barberDoc!.ownerName,
+              phone: phone.isNotEmpty ? phone : _barberDoc!.phone,
+              address: city.isNotEmpty ? city : _barberDoc!.address,
+              referralCode: referralCode.isNotEmpty ? referralCode : _barberDoc!.referralCode,
+            );
+            await barberService.updateBarber(_barberDoc!.barberId, updatedBarber);
+          } catch (e) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Profile updated but failed to save services: $e'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            }
+          }
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully'),
@@ -468,7 +526,59 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                     }).toList(),
               ),
 
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+
+              // Services Editor
+              _buildSectionHeader('Services'),
+              const SizedBox(height: 8),
+              if (_barberNotFound)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8.0),
+                  child: Text(
+                    'Barber record not found. Services cannot be edited until your shop is registered.',
+                    style: TextStyle(color: Colors.red[700], fontSize: 13),
+                  ),
+                ),
+              Column(
+                children: [
+                  ..._services.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final service = entry.value;
+                    return Card(
+                      child: ListTile(
+                        title: Text(service.name),
+                        subtitle: Text('\$${service.price.toStringAsFixed(2)} • ${service.durationMinutes} min'),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Color(0xFF1E88E5)),
+                              onPressed: () => _showAddEditServiceDialog(index: idx),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () => _removeService(idx),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      onPressed: _barberNotFound ? null : () => _showAddEditServiceDialog(),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Add Service'),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+
+              const SizedBox(height: 8),
 
               // Save Button
               SizedBox(
@@ -595,6 +705,97 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
           inputFormatters: inputFormatters ?? [],
         ),
       ],
+    );
+  }
+
+  // Show dialog to add or edit a service
+  Future<void> _showAddEditServiceDialog({int? index}) async {
+    final isEdit = index != null;
+    final nameController = TextEditingController(text: isEdit ? _services[index!].name : '');
+    final priceController = TextEditingController(text: isEdit ? _services[index!].price.toString() : '');
+    final durationController = TextEditingController(text: isEdit ? _services[index!].durationMinutes.toString() : '30');
+
+    await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text(isEdit ? 'Edit Service' : 'Add Service'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(labelText: 'Service Name'),
+                ),
+                TextField(
+                  controller: priceController,
+                  decoration: const InputDecoration(labelText: 'Price'),
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
+                ),
+                TextField(
+                  controller: durationController,
+                  decoration: const InputDecoration(labelText: 'Duration (minutes)'),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                final price = double.tryParse(priceController.text.trim()) ?? 0.0;
+                final duration = int.tryParse(durationController.text.trim()) ?? 30;
+                if (name.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Please enter a service name')),
+                  );
+                  return;
+                }
+
+                final newService = Service(name: name, price: price, durationMinutes: duration);
+                setState(() {
+                  if (isEdit) {
+                    _services[index!] = newService;
+                  } else {
+                    _services.add(newService);
+                  }
+                });
+
+                Navigator.of(context).pop();
+              },
+              child: Text(isEdit ? 'Save' : 'Add'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _removeService(int index) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Service'),
+        content: const Text('Are you sure you want to remove this service?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(context).pop(), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _services.removeAt(index);
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
     );
   }
 }
