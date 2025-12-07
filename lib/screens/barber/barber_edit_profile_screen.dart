@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show FilteringTextInputFormatter, TextInputFormatter;
+import 'package:flutter/services.dart'
+    show FilteringTextInputFormatter, TextInputFormatter;
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
@@ -10,7 +11,8 @@ class BarberEditProfileScreen extends StatefulWidget {
   const BarberEditProfileScreen({super.key});
 
   @override
-  State<BarberEditProfileScreen> createState() => _BarberEditProfileScreenState();
+  State<BarberEditProfileScreen> createState() =>
+      _BarberEditProfileScreenState();
 }
 
 class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
@@ -25,7 +27,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
   bool _isLoading = false;
   List<String> _selectedSpecialties = [];
   final double _rating = 4.5;
-  
+
   // Photo handling
   final ImagePicker _imagePicker = ImagePicker();
   XFile? _barberPhotoFile;
@@ -39,11 +41,17 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
     _nameController = TextEditingController(text: user?.displayName ?? '');
     _phoneController = TextEditingController(text: user?.phone ?? '');
     _shopNameController = TextEditingController(text: user?.shopId ?? '');
-    _referralCodeController = TextEditingController(text: user?.referralCode ?? '');
+    _referralCodeController = TextEditingController(
+      text: user?.referralCode ?? '',
+    );
     _addressController = TextEditingController(text: user?.city ?? '');
     _bioController = TextEditingController(text: user?.bio ?? '');
-    _experienceController = TextEditingController(text: user?.yearsOfExperience?.toString() ?? '');
-    _ratingController = TextEditingController(text: user?.rating?.toString() ?? '');
+    _experienceController = TextEditingController(
+      text: user?.yearsOfExperience?.toString() ?? '',
+    );
+    _ratingController = TextEditingController(
+      text: user?.rating?.toString() ?? '',
+    );
     _selectedSpecialties = user?.specialties ?? [];
   }
 
@@ -69,7 +77,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
         maxWidth: 1024,
         maxHeight: 1024,
       );
-      
+
       if (pickedFile != null) {
         setState(() {
           _barberPhotoFile = pickedFile;
@@ -77,9 +85,9 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error picking image: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error picking image: $e')));
       }
     }
   }
@@ -180,7 +188,9 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(authProvider.errorMessage ?? 'Failed to update profile'),
+            content: Text(
+              authProvider.errorMessage ?? 'Failed to update profile',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -259,7 +269,10 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFF1E88E5),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 3),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 3,
+                                ),
                               ),
                               child: const Padding(
                                 padding: EdgeInsets.all(8.0),
@@ -276,7 +289,9 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      _nameController.text.isNotEmpty ? _nameController.text : 'Barber Name',
+                      _nameController.text.isNotEmpty
+                          ? _nameController.text
+                          : 'Barber Name',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -411,37 +426,46 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: [
-                  'Haircut',
-                  'Beard Trim',
-                  'Shaving',
-                  'Hair Coloring',
-                  'Styling',
-                  'Threading',
-                  'Hair Wash',
-                  'Head Massage',
-                ].map((specialty) {
-                  final isSelected = _selectedSpecialties.contains(specialty);
-                  return FilterChip(
-                    label: Text(specialty),
-                    selected: isSelected,
-                    onSelected: (selected) {
-                      setState(() {
-                        if (selected) {
-                          _selectedSpecialties.add(specialty);
-                        } else {
-                          _selectedSpecialties.remove(specialty);
-                        }
-                      });
-                    },
-                    backgroundColor: Colors.grey[200],
-                    selectedColor: const Color(0xFF1E88E5).withOpacity(0.2),
-                    labelStyle: TextStyle(
-                      color: isSelected ? const Color(0xFF1E88E5) : Colors.grey[700],
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  );
-                }).toList(),
+                children:
+                    [
+                      'Haircut',
+                      'Beard Trim',
+                      'Shaving',
+                      'Hair Coloring',
+                      'Styling',
+                      'Threading',
+                      'Hair Wash',
+                      'Head Massage',
+                    ].map((specialty) {
+                      final isSelected = _selectedSpecialties.contains(
+                        specialty,
+                      );
+                      return FilterChip(
+                        label: Text(specialty),
+                        selected: isSelected,
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedSpecialties.add(specialty);
+                            } else {
+                              _selectedSpecialties.remove(specialty);
+                            }
+                          });
+                        },
+                        backgroundColor: Colors.grey[200],
+                        selectedColor: const Color(
+                          0xFF1E88E5,
+                        ).withAlpha((0.2 * 255).round()),
+                        labelStyle: TextStyle(
+                          color: isSelected
+                              ? const Color(0xFF1E88E5)
+                              : Colors.grey[700],
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                        ),
+                      );
+                    }).toList(),
               ),
 
               const SizedBox(height: 32),
@@ -550,9 +574,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
           decoration: InputDecoration(
             hintText: hint,
             prefixIcon: Icon(icon, color: const Color(0xFF1E88E5)),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
               borderSide: const BorderSide(color: Colors.grey),
@@ -563,10 +585,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(
-                color: Color(0xFF1E88E5),
-                width: 2,
-              ),
+              borderSide: const BorderSide(color: Color(0xFF1E88E5), width: 2),
             ),
             filled: !enabled,
             fillColor: !enabled ? Colors.grey[100] : null,

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:logger/logger.dart';
 import '../config/app_constants.dart';
 import '../models/index.dart';
@@ -48,11 +49,22 @@ class BarberService {
       // Create barber with referral code
       final barberWithAgent = barber.copyWith(referralCode: referralCode);
 
-      final docRef = await _firestore
-          .collection(AppConstants.barbersCollection)
-          .add(barberWithAgent.toFirestore());
-
-      final createdBarberId = docRef.id;
+      // Prefer creating the barber document with the authenticated user's UID
+      final currentUid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
+      String createdBarberId;
+      if (currentUid != null) {
+        final docRef = _firestore
+            .collection(AppConstants.barbersCollection)
+            .doc(currentUid);
+        await docRef.set(barberWithAgent.toFirestore());
+        createdBarberId = currentUid;
+      } else {
+        // No authenticated user available - according to Firestore rules,
+        // barber documents must be created with the auth UID as the document id.
+        // Failing fast here prevents creating a document with an auto-id
+        // which would be rejected by security rules and silently lost.
+        throw Exception('Cannot create barber: no authenticated user available');
+      }
 
       // If agent ID provided, register shop to agent
       if (referralCode != null && referralCode.isNotEmpty) {
@@ -83,12 +95,19 @@ class BarberService {
     try {
       _logger.i('Creating barber shop: ${barber.shopName}');
 
-      final docRef = await _firestore
-          .collection(AppConstants.barbersCollection)
-          .add(barber.toFirestore());
-
-      _logger.i('Barber shop created with ID: ${docRef.id}');
-      return docRef.id;
+      // Create document using the authenticated user's UID when possible
+      final currentUid = fb_auth.FirebaseAuth.instance.currentUser?.uid;
+      if (currentUid != null) {
+        final docRef = _firestore
+            .collection(AppConstants.barbersCollection)
+            .doc(currentUid);
+        await docRef.set(barber.toFirestore());
+        _logger.i('Barber shop created with ID: $currentUid');
+        return currentUid;
+      } else {
+        // Enforce UID-based creation to comply with Firestore rules.
+        throw Exception('Cannot create barber: no authenticated user available');
+      }
     } catch (e) {
       _logger.e('Error creating barber: $e');
       rethrow;

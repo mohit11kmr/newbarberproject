@@ -48,7 +48,9 @@ class _SignupScreenState extends State<SignupScreen> {
           // For barber flavor, force 'barber'; otherwise use user's role
           _selectedUserType = FlavorConfig.isBarber ? 'barber' : u.userType;
           _nameController.text = u.name;
-          if (u.referralCode != null) _referralCodeController.text = u.referralCode!;
+          if (u.referralCode != null) {
+            _referralCodeController.text = u.referralCode!;
+          }
         }
       }
     });
@@ -69,7 +71,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   Future<void> _handleSignup() async {
     if (!_formKey.currentState!.validate()) return;
-    
+
     if (!_agreeToTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -95,9 +97,15 @@ class _SignupScreenState extends State<SignupScreen> {
         final success = await authProvider.completeRegistrationForCurrentUser(
           name: _nameController.text.trim(),
           userRole: _selectedUserType,
-          phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-          shopId: _shopNameController.text.trim().isNotEmpty ? _shopNameController.text.trim() : null,
-          referralCode: _referralCodeController.text.trim().isNotEmpty ? _referralCodeController.text.trim() : null,
+          phone: _phoneController.text.trim().isNotEmpty
+              ? _phoneController.text.trim()
+              : null,
+          shopId: _shopNameController.text.trim().isNotEmpty
+              ? _shopNameController.text.trim()
+              : null,
+          referralCode: _referralCodeController.text.trim().isNotEmpty
+              ? _referralCodeController.text.trim()
+              : null,
         );
 
         if (!mounted) return;
@@ -123,11 +131,19 @@ class _SignupScreenState extends State<SignupScreen> {
         password: _passwordController.text,
         name: _nameController.text.trim(),
         userRole: _selectedUserType,
-        referralCode: _referralCodeController.text.trim().isNotEmpty ? _referralCodeController.text.trim() : null,
+        referralCode: _referralCodeController.text.trim().isNotEmpty
+            ? _referralCodeController.text.trim()
+            : null,
         // Barber-specific fields
-        phone: _phoneController.text.trim().isNotEmpty ? _phoneController.text.trim() : null,
-        address: _addressController.text.trim().isNotEmpty ? _addressController.text.trim() : null,
-        shopName: _shopNameController.text.trim().isNotEmpty ? _shopNameController.text.trim() : null,
+        phone: _phoneController.text.trim().isNotEmpty
+            ? _phoneController.text.trim()
+            : null,
+        address: _addressController.text.trim().isNotEmpty
+            ? _addressController.text.trim()
+            : null,
+        shopName: _shopNameController.text.trim().isNotEmpty
+            ? _shopNameController.text.trim()
+            : null,
       );
 
       if (!mounted) return;
@@ -196,10 +212,7 @@ class _SignupScreenState extends State<SignupScreen> {
               const Text(
                 'Create an account to get started',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF999999),
-                ),
+                style: TextStyle(fontSize: 14, color: Color(0xFF999999)),
               ),
 
               const SizedBox(height: 30),
@@ -209,7 +222,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
+                    color: Colors.red.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(color: Colors.red),
                   ),
@@ -236,14 +249,17 @@ class _SignupScreenState extends State<SignupScreen> {
                         decoration: BoxDecoration(
                           border: Border.all(color: Colors.grey.shade300),
                           borderRadius: BorderRadius.circular(8),
-                          color: Colors.blue.withOpacity(0.05),
+                          color: Colors.blue.withValues(alpha: 0.05),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Text(
                               'Account Type',
-                              style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
                             ),
                             const SizedBox(height: 12),
                             Container(
@@ -254,7 +270,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                   width: 2,
                                 ),
                                 borderRadius: BorderRadius.circular(8),
-                                color: const Color(0xFF1E88E5).withOpacity(0.1),
+                                color: const Color(
+                                  0xFF1E88E5,
+                                ).withValues(alpha: 0.1),
                               ),
                               child: Row(
                                 children: [
@@ -272,7 +290,10 @@ class _SignupScreenState extends State<SignupScreen> {
                                       ),
                                     ),
                                   ),
-                                  const Icon(Icons.check_circle, color: Color(0xFF1E88E5)),
+                                  const Icon(
+                                    Icons.check_circle,
+                                    color: Color(0xFF1E88E5),
+                                  ),
                                 ],
                               ),
                             ),
@@ -290,6 +311,7 @@ class _SignupScreenState extends State<SignupScreen> {
                       ),
                       const SizedBox(height: 16),
                     ],
+
                     /// Name field
                     TextFormField(
                       controller: _nameController,
@@ -339,10 +361,9 @@ class _SignupScreenState extends State<SignupScreen> {
                           return 'Email is required';
                         }
                         if (!RegExp(
-                                r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-                            .hasMatch(value!)) {
+                          r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+                        ).hasMatch(value!)) {
                           return 'Please enter a valid email';
-
                         }
                         return null;
                       },
@@ -452,7 +473,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                         validator: (value) {
-                          if (_selectedUserType == 'barber' && (value?.isEmpty ?? true)) {
+                          if (_selectedUserType == 'barber' &&
+                              (value?.isEmpty ?? true)) {
                             return 'Phone number is required for barbers';
                           }
                           return null;
@@ -477,7 +499,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                         validator: (value) {
-                          if (_selectedUserType == 'barber' && (value?.isEmpty ?? true)) {
+                          if (_selectedUserType == 'barber' &&
+                              (value?.isEmpty ?? true)) {
                             return 'Shop name is required for barbers';
                           }
                           return null;
@@ -525,7 +548,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           ),
                         ),
                         validator: (value) {
-                          if (_selectedUserType == 'barber' && (value?.isEmpty ?? true)) {
+                          if (_selectedUserType == 'barber' &&
+                              (value?.isEmpty ?? true)) {
                             return 'Address is required for barbers';
                           }
                           return null;
@@ -591,8 +615,9 @@ class _SignupScreenState extends State<SignupScreen> {
                               width: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor:
-                                    AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(

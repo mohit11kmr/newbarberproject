@@ -384,9 +384,15 @@ class AuthProvider extends ChangeNotifier {
         } catch (e, st) {
           _logger.e('Error creating barber record: $e');
           _logger.d(st);
-          // Don't fail signup if barber record creation fails
-          // User account was created successfully, barber can update profile later
-          _logger.w('Barber record creation failed, but user account exists. User can complete profile later.');
+          // Surface this error so UI can show a visible message instead of failing silently
+          final msg = 'Failed to create barber profile: ${e.toString()}';
+          try {
+            _setError(msg);
+          } catch (_) {
+            _logger.w('Unable to set provider error state');
+          }
+          // Also log a warning for developers
+          _logger.w('Barber record creation failed, but user account exists. User can complete profile later. Error surfaced to UI.');
         }
       }
 
