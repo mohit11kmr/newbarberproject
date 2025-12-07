@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:go_router/go_router.dart';
+import '../../utils/flavor_navigation.dart';
 import '../../models/index.dart';
 import '../../providers/barber_provider.dart';
 import '../../providers/booking_provider.dart';
@@ -233,13 +234,14 @@ class _BarberDetailsScreenState extends State<BarberDetailsScreen> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () async {
+                    onPressed: () async {
                     Navigator.pop(context);
                     final bookingProvider = context.read<BookingProvider>();
                     final auth = context.read<AuthProvider>();
                     await bookingProvider.loadCustomerBookings(auth.currentUser!.uid);
                     if (!mounted) return;
-                    context.go('/bookings');
+                    // Use flavor-safe navigation to avoid opening customer routes in barber flavor
+                    flavorSafeGo(context, '/bookings');
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E88E5),
@@ -262,7 +264,8 @@ class _BarberDetailsScreenState extends State<BarberDetailsScreen> {
                   onPressed: () {
                     Navigator.pop(context);
                     if (!mounted) return;
-                    context.go('/home');
+                    // Use flavor-safe navigation to avoid opening customer routes in barber flavor
+                    flavorSafeGo(context, '/home');
                   },
                   style: OutlinedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),

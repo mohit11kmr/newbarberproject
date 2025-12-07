@@ -1,80 +1,53 @@
+/// This file is the Flutter entry point but should NOT be used.
+/// Individual flavor mains (main_barber.dart, main_admin.dart, main_customer.dart)
+/// should be specified via build flags.
+///
+/// DO NOT RUN THIS DIRECTLY. Use:
+///   flutter run --flavor barber -t lib/main_barber.dart
+///   flutter run --flavor admin -t lib/main_admin.dart
+///   flutter run --flavor customer -t lib/main_customer.dart
+///   flutter build apk --flavor barber -t lib/main_barber.dart
+///   flutter build apk --flavor admin -t lib/main_admin.dart
+///   flutter build apk --flavor customer -t lib/main_customer.dart
+///
+/// This fallback main should NEVER be called in production.
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'config/app_theme.dart';
-import 'config/flavor_config.dart';
-import 'providers/auth_provider.dart';
-import 'providers/theme_provider.dart';
-// dev flags and fake services removed; using real services via providers
-import 'providers/barber_provider.dart';
-import 'providers/booking_provider.dart';
-import 'routes/app_routes.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart';
-import 'firebase_options.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Set default flavor to CUSTOMER (for web testing)
-  // Individual flavor mains (main_barber.dart, main_admin.dart) override this
-  FlavorConfig.setFlavor(
-    AppFlavor.customer,
-    'BarberPro',
-    'com.barberpro.customer',
+  
+  // Emergency fallback if flavor-specific main is not used
+  runApp(
+    const MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error, size: 64, color: Colors.red),
+              SizedBox(height: 16),
+              Text(
+                'ERROR: Wrong Entry Point',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 8),
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'This app must be built with flavor-specific entry points.\n\n'
+                  'Use:\n'
+                  'flutter build apk --flavor barber -t lib/main_barber.dart\n'
+                  'flutter build apk --flavor customer -t lib/main_customer.dart\n'
+                  'flutter build apk --flavor admin -t lib/main_admin.dart',
+                  textAlign: TextAlign.center,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
   );
-
-  // Initialize Firebase for all platforms. Use web options on web,
-  // and the platform-native configuration on mobile/desktop.
-  try {
-    if (kIsWeb) {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
-    } else {
-      await Firebase.initializeApp();
-    }
-  } catch (e) {
-    debugPrint('Firebase initialization error: $e');
-  }
-
-  // Initialize auth provider for web as well
-  final authProvider = AuthProvider();
-  await authProvider.initializeAuth();
-
-  // Initialize theme provider (reads saved prefs)
-  final themeProvider = await ThemeProvider.create();
-
-  runApp(MyApp(
-    authProvider: authProvider,
-    themeProvider: themeProvider,
-  ));
 }
 
-class MyApp extends StatelessWidget {
-  final AuthProvider authProvider;
-  final ThemeProvider themeProvider;
-
-  const MyApp({super.key, required this.authProvider, required this.themeProvider});
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider.value(value: authProvider),
-        ChangeNotifierProvider.value(value: themeProvider),
-        ChangeNotifierProvider(create: (_) => BarberProvider()),
-        ChangeNotifierProvider(create: (_) => BookingProvider()),
-      ],
-      child: Builder(builder: (context) {
-        final router = createAppRouter(context.read<AuthProvider>().authStateChanges);
-        return MaterialApp.router(
-          title: FlavorConfig.displayName,
-          theme: AppTheme.lightTheme(),
-          darkTheme: AppTheme.darkTheme(),
-          themeMode: context.watch<ThemeProvider>().themeMode,
-          routerConfig: router,
-        );
-      }),
-    );
-  }
-}
