@@ -212,12 +212,16 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
 
       if (!mounted) return;
 
+        // Capture context-dependent variables before async gaps
+        final barberProvider = context.read<BarberProvider>();
+        final scaffoldMessenger = ScaffoldMessenger.of(context);
+        final router = GoRouter.of(context);
+
         if (ok) {
           // Attempt to persist barber services to Firestore (if barber doc exists)
           if (_barberDoc != null) {
             try {
               final barberService = BarberService();
-              final barberProvider = context.read<BarberProvider>();
               final updatedBarber = _barberDoc!.copyWith(
                 services: _services,
                 shopName: shopId.isNotEmpty ? shopId : _barberDoc!.shopName,
@@ -226,17 +230,13 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 address: city.isNotEmpty ? city : _barberDoc!.address,
                 referralCode: referralCode.isNotEmpty ? referralCode : _barberDoc!.referralCode,
               );
-              // Capture locals that depend on BuildContext before async gaps
-              final barberProvider = context.read<BarberProvider>();
-              final scaffoldMessenger = ScaffoldMessenger.of(context);
-              final router = GoRouter.of(context);
 
               await barberService.updateBarber(_barberDoc!.barberId, updatedBarber);
               // Light refresh: fetch the single barber and select it in the provider
               try {
                 if (mounted) setState(() => _isRefreshingBarber = true);
-                final refreshed = await context.read<BarberProvider>().getBarberById(_barberDoc!.barberId);
-                if (refreshed != null) {
+                final refreshed = await barberProvider.getBarberById(_barberDoc!.barberId);
+                if (mounted && refreshed != null) {
                   barberProvider.selectBarber(refreshed);
                 }
               } catch (_) {
@@ -246,7 +246,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
               }
             } catch (e) {
               if (mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
+                scaffoldMessenger.showSnackBar(
                   SnackBar(
                     content: Text('Profile updated but failed to save services: $e'),
                     backgroundColor: Colors.orange,
@@ -256,25 +256,27 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
             }
           }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        context.pop();
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                authProvider.errorMessage ?? 'Failed to update profile',
+          if (mounted) {
+            scaffoldMessenger.showSnackBar(
+              const SnackBar(
+                content: Text('Profile updated successfully'),
+                backgroundColor: Colors.green,
               ),
-              backgroundColor: Colors.red,
-            ),
-          );
+            );
+            router.pop();
+          }
+        } else {
+          if (mounted) {
+            scaffoldMessenger.showSnackBar(
+              SnackBar(
+                content: Text(
+                  authProvider.errorMessage ?? 'Failed to update profile',
+                ),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
         }
-      }
     } catch (e) {
       if (!mounted) return;
 
