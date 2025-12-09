@@ -225,13 +225,18 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 address: city.isNotEmpty ? city : _barberDoc!.address,
                 referralCode: referralCode.isNotEmpty ? referralCode : _barberDoc!.referralCode,
               );
+              // Capture locals that depend on BuildContext before async gaps
+              final barberProvider = context.read<BarberProvider>();
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final router = GoRouter.of(context);
+
               await barberService.updateBarber(_barberDoc!.barberId, updatedBarber);
               // Light refresh: fetch the single barber and select it in the provider
               try {
                 if (mounted) setState(() => _isRefreshingBarber = true);
-                final refreshed = await context.read<BarberProvider>().getBarberById(_barberDoc!.barberId);
+                final refreshed = await barberProvider.getBarberById(_barberDoc!.barberId);
                 if (refreshed != null) {
-                  context.read<BarberProvider>().selectBarber(refreshed);
+                  barberProvider.selectBarber(refreshed);
                 }
               } catch (_) {
                 // ignore
@@ -250,13 +255,13 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
             }
           }
 
-        ScaffoldMessenger.of(context).showSnackBar(
+        scaffoldMessenger.showSnackBar(
           const SnackBar(
             content: Text('Profile updated successfully'),
             backgroundColor: Colors.green,
           ),
         );
-        context.pop();
+        router.pop();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -577,7 +582,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                         ),
                       ),
                     );
-                  }).toList(),
+                  }),
                   const SizedBox(height: 8),
                   Align(
                     alignment: Alignment.centerLeft,
