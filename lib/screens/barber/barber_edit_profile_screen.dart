@@ -226,12 +226,16 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 address: city.isNotEmpty ? city : _barberDoc!.address,
                 referralCode: referralCode.isNotEmpty ? referralCode : _barberDoc!.referralCode,
               );
+              // Capture locals that depend on BuildContext before async gaps
+              final barberProvider = context.read<BarberProvider>();
+              final scaffoldMessenger = ScaffoldMessenger.of(context);
+              final router = GoRouter.of(context);
+
               await barberService.updateBarber(_barberDoc!.barberId, updatedBarber);
               // Light refresh: fetch the single barber and select it in the provider
               try {
                 if (mounted) setState(() => _isRefreshingBarber = true);
-                final refreshed = await barberProvider.getBarberById(_barberDoc!.barberId);
-                if (!mounted) return;
+                final refreshed = await context.read<BarberProvider>().getBarberById(_barberDoc!.barberId);
                 if (refreshed != null) {
                   barberProvider.selectBarber(refreshed);
                 }
@@ -252,15 +256,13 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
             }
           }
 
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                content: Text('Profile updated successfully'),
-                backgroundColor: Colors.green,
-              ),
-            );
-            context.pop();
-          }
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+        context.pop();
       } else {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
