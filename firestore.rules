@@ -73,6 +73,14 @@ service cloud.firestore {
     
     // Bookings Collection
     match /bookings/{bookingId} {
+      // NOTE: We support per-team-member assignment via the `assignedTo` field.
+      // - `assignedTo` should be either a teamMemberId (string) from the barber's
+      //   `teamMembers` list, or null/absent for unassigned bookings.
+      // - Prefer server-side validation (Cloud Function) to ensure `assignedTo`
+      //   belongs to the barber and that token generation is atomic.
+      // - The app's transactional booking flow (Firestore transaction) should
+      //   set `assignedTo` when the customer chooses a specific team member.
+      // Update these rules to validate assignedTo if you wish stricter checks.
       // Customer can read their own bookings
       allow read: if isSignedIn() && 
                      request.auth.uid == resource.data.customerId;
@@ -85,12 +93,22 @@ service cloud.firestore {
       allow read: if isSignedIn() && isUserType('admin');
       
       // Customer can create booking
-      allow create: if isSignedIn() && 
+      allow create: if isSignedIn() &&
                        request.auth.uid == request.resource.data.customerId &&
                        isUserType('customer') &&
                        request.resource.data.status == 'waiting' &&
                        request.resource.data.paymentMethod == 'cash' &&
-                       request.resource.data.paymentStatus == 'pending';
+                       request.resource.data.paymentStatus == 'pending' &&
+                       (
+                         // assignedTo may be absent/null (unassigned) or must belong to barber.teamMembers
+                         !('assignedTo' in request.resource.data) ||
+                         request.resource.data.assignedTo == null ||
+                         (
+                           // Validate assignedTo is present in barber.teamMembers[].id
+                           (get(/databases/$(database)/documents/barbers/$(request.resource.data.barberId)).data.teamMembers is list) &&
+                           (request.resource.data.assignedTo in [for (m in get(/databases/$(database)/documents/barbers/$(request.resource.data.barberId)).data.teamMembers) m.id])
+                         )
+                       );
       
       // Customer can update their booking (cancel, add rating)
       allow update: if isSignedIn() && 

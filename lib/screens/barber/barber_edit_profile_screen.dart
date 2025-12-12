@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../providers/auth_provider.dart';
+import 'package:uuid/uuid.dart';
 import 'package:barber_pro/providers/barber_provider.dart';
 import '../../models/index.dart';
 import '../../services/index.dart';
@@ -317,6 +318,15 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
           if (_barberDoc != null) {
             try {
               final barberService = BarberService();
+              // Ensure each team member has a stable id before persisting
+              final uuid = Uuid();
+              final membersWithIds = _teamMembers.map((t) {
+                if (t.id == null || t.id!.isEmpty) {
+                  return t.copyWith(id: uuid.v4());
+                }
+                return t;
+              }).toList();
+
               final updatedBarber = _barberDoc!.copyWith(
                 services: _services,
                 shopName: shopId.isNotEmpty ? shopId : _barberDoc!.shopName,
@@ -325,7 +335,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 address: city.isNotEmpty ? city : _barberDoc!.address,
                 referralCode: referralCode.isNotEmpty ? referralCode : _barberDoc!.referralCode,
                 dailyCapacity: _dailyCapacity,
-                teamMembers: _teamMembers,
+                teamMembers: membersWithIds,
               );
 
               await barberService.updateBarber(_barberDoc!.barberId, updatedBarber);
@@ -1166,7 +1176,8 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                   return;
                 }
 
-                final newMember = TeamMember(name: name, phone: phone);
+                final memberId = isEdit ? _teamMembers[index].id : null;
+                final newMember = TeamMember(id: memberId, name: name, phone: phone);
                 setState(() {
                   if (isEdit) {
                     _teamMembers[index] = newMember;

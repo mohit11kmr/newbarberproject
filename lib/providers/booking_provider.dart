@@ -30,6 +30,7 @@ class BookingProvider extends ChangeNotifier {
     required String barberId,
     required List<Service> services,
     required int estimatedWaitTime,
+    String? assignedTo,
   }) async {
     try {
       _setLoading(true);
@@ -41,6 +42,7 @@ class BookingProvider extends ChangeNotifier {
         barberId,
         services,
         estimatedWaitTime,
+        assignedTo: assignedTo,
       );
 
       _logger.i('Booking created successfully with ID: $bookingId');
@@ -79,6 +81,7 @@ class BookingProvider extends ChangeNotifier {
           paymentStatus: 'pending',
           bookingTime: DateTime.now(),
           estimatedWaitTime: estimatedWaitTime,
+          assignedTo: assignedTo,
         );
 
         _currentBooking = fallbackBooking;

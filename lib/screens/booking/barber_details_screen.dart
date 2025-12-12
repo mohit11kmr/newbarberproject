@@ -26,6 +26,57 @@ class _BarberDetailsScreenState extends State<BarberDetailsScreen> {
     _loadBarberDetails();
   }
 
+  /// Show dialog to pick a team member. Returns selected member index/id or null if skipped.
+  Future<String?> _showChooseTeamMemberDialog(
+    List<TeamMember> teamMembers,
+    Map<String, int> counts,
+  ) async {
+    // Sort by least pending first
+    final sorted = List<TeamMember>.from(teamMembers)
+      ..sort((a, b) {
+        final aid = a.id ?? a.phone ?? a.name;
+        final bid = b.id ?? b.phone ?? b.name;
+        final ac = counts[aid] ?? 0;
+        final bc = counts[bid] ?? 0;
+        return ac.compareTo(bc);
+      });
+
+    final selected = await showModalBottomSheet<String?>(
+      context: context,
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(12.0),
+                child: Text('Choose a team member', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+              ...sorted.map((t) {
+                final id = t.id ?? t.phone ?? t.name;
+                final name = t.name.isNotEmpty ? t.name : (t.phone ?? '');
+                final count = counts[id] ?? 0;
+                return ListTile(
+                  title: Text(name),
+                  subtitle: Text('$count pending'),
+                  onTap: () => Navigator.of(ctx).pop(id.toString()),
+                );
+              }).toList(),
+              ListTile(
+                title: const Text('Any available'),
+                subtitle: const Text('Let the shop assign automatically'),
+                onTap: () => Navigator.of(ctx).pop(null),
+              ),
+              const SizedBox(height: 8),
+            ],
+          ),
+        );
+      },
+    );
+
+    return selected;
+  }
+
   // Load barber details without holding BuildContext across async gaps.
   Future<void> _loadBarberDetails() {
     setState(() {
@@ -126,11 +177,22 @@ class _BarberDetailsScreenState extends State<BarberDetailsScreen> {
       // Calculate estimated wait time (base time + queue length)
       final estimatedWaitTime = 30 + (_barber?.queueLength ?? 0) * 15;
 
+      // If the shop has team members, allow customer to choose one (or any)
+      String? assignedTo;
+      final team = _barber?.teamMembers ?? [];
+      if (team.isNotEmpty) {
+        // Fetch per-member pending counts
+        final barberProvider = Provider.of<BarberProvider>(context, listen: false);
+        final counts = await barberProvider.getPendingCountsByMember(widget.barberId);
+        assignedTo = await _showChooseTeamMemberDialog(team, counts);
+      }
+
       final bookingId = await bookingProvider.createBooking(
         customerId: authProvider.currentUser!.uid,
         barberId: widget.barberId,
         services: selectedServices,
         estimatedWaitTime: estimatedWaitTime,
+        assignedTo: assignedTo,
       );
 
       navigator.pop(); // Close loading dialog

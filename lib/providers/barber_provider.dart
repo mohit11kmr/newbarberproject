@@ -419,6 +419,33 @@ class BarberProvider extends ChangeNotifier {
     }
   }
 
+  /// Get pending counts grouped by assigned team member for a barber
+  /// Returns a map: { teamMemberId (or ''): pendingCount }
+  Future<Map<String, int>> getPendingCountsByMember(String barberId) async {
+    try {
+      _logger.i('Computing pending counts by member for barber: $barberId');
+
+      final snapshot = await _firestore
+          .collection(AppConstants.bookingsCollection)
+          .where('barberId', isEqualTo: barberId)
+          .where('status', isEqualTo: AppConstants.bookingStatusWaiting)
+          .get();
+
+      final Map<String, int> counts = {};
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final assigned = (data['assignedTo'] as String?) ?? '';
+        counts[assigned] = (counts[assigned] ?? 0) + 1;
+      }
+
+      _logger.i('Pending counts by member: $counts');
+      return counts;
+    } catch (e) {
+      _logger.e('Error computing pending counts: $e');
+      return {};
+    }
+  }
+
   /// Helper: Format estimated wait time
   String _formatWaitTime(dynamic waitTime) {
     if (waitTime is int) {
