@@ -40,7 +40,6 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
   bool _isLoading = false;
   List<Service> _services = [];
   Barber? _barberDoc;
-  bool _barberNotFound = false;
   final double _rating = 4.5;
   bool _isRefreshingBarber = false;
 
@@ -92,20 +91,10 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
               _barberDoc = barber;
               _services = List<Service>.from(barber.services);
             });
-          } else {
-            setState(() {
-              _barberNotFound = true;
-            });
           }
-        } else {
-          setState(() {
-            _barberNotFound = true;
-          });
         }
       } catch (_) {
-        setState(() {
-          _barberNotFound = true;
-        });
+        // Ignore barber fetch errors
       }
     }();
   }
