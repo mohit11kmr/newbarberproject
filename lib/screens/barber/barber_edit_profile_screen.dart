@@ -40,7 +40,6 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
   bool _isLoading = false;
   List<Service> _services = [];
   Barber? _barberDoc;
-  bool _barberNotFound = false;
   final double _rating = 4.5;
   bool _isRefreshingBarber = false;
 
@@ -60,7 +59,9 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
     _referralCodeController = TextEditingController(
       text: user?.referralCode ?? '',
     );
-    _addressController = TextEditingController(text: user?.city ?? '');
+    // Note: _addressController is deprecated, we now use individual address fields (street, village, etc.)
+    // Keeping it for backward compatibility but not using it in the UI anymore
+    _addressController = TextEditingController(text: user?.street ?? '');
     _bioController = TextEditingController(text: user?.bio ?? '');
     _experienceController = TextEditingController(
       text: user?.yearsOfExperience?.toString() ?? '',
@@ -92,20 +93,10 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
               _barberDoc = barber;
               _services = List<Service>.from(barber.services);
             });
-          } else {
-            setState(() {
-              _barberNotFound = true;
-            });
           }
-        } else {
-          setState(() {
-            _barberNotFound = true;
-          });
         }
       } catch (_) {
-        setState(() {
-          _barberNotFound = true;
-        });
+        // Ignore barber fetch errors
       }
     }();
   }
@@ -193,7 +184,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
       final name = _nameController.text.trim();
       final phone = _phoneController.text.trim();
       final shopName = _shopNameController.text.trim();
-      final address = _addressController.text.trim();
+      final address = _streetController.text.trim();
       
       // Address breakdown fields - all required for barber registration
       final country = _countryController.text.trim();
@@ -235,7 +226,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
       final phone = _phoneController.text.trim();
       final shopId = _shopNameController.text.trim();
       final referralCode = _referralCodeController.text.trim();
-      final city = _addressController.text.trim();
+      final city = _villageController.text.trim();
       final bio = _bioController.text.trim();
       final years = int.tryParse(_experienceController.text.trim());
       
@@ -594,21 +585,10 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 icon: Icons.badge,
                 hint: 'Enter referral code if applicable',
               ),
-              const SizedBox(height: 16),
-
-              // Address Field
-              _buildTextField(
-                controller: _addressController,
-                label: 'Shop Address',
-                icon: Icons.location_on,
-                hint: 'Enter complete address',
-                maxLines: 2,
-                isRequired: context.read<AuthProvider>().needsRegistration,
-              ),
               const SizedBox(height: 24),
 
-              // Address Breakdown Section
-              _buildSectionHeader('Address Details'),
+              // Shop Address Details Section
+              _buildSectionHeader('Shop Address Details *'),
               const SizedBox(height: 12),
 
               // Country Field
