@@ -22,12 +22,29 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build APK
-        run: flutter build apk --release
+      - name: Build Customer APK
+        run: flutter build apk --flavor customer -t lib/main_customer.dart --release
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4   # <== FIXED
+      - name: Build Barber APK
+        run: flutter build apk --flavor barber -t lib/main_barber.dart --release
+
+      - name: Build Admin APK
+        run: flutter build apk --flavor admin -t lib/main_admin.dart --release
+
+      - name: Upload Customer APK
+        uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
-          path:
-            build/app/outputs/flutter-apk/app-release.apk
+          name: app-customer-release-apk
+          path: build/app/outputs/flutter-apk/app-customer-release.apk
+
+      - name: Upload Barber APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-barber-release-apk
+          path: build/app/outputs/flutter-apk/app-barber-release.apk
+
+      - name: Upload Admin APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-admin-release-apk
+          path: build/app/outputs/flutter-apk/app-admin-release.apk
