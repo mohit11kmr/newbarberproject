@@ -448,6 +448,9 @@ class AuthProvider extends ChangeNotifier {
   /// (e.g., Google) but does not yet have a Firestore profile. This will
   /// persist the provided profile fields into Firestore and load the full
   /// profile into the provider.
+  /// 
+  /// For barber users: if shopName and address are provided, also creates
+  /// a Barber document in the barbers collection to enable service editing.
   Future<bool> completeRegistrationForCurrentUser({
     required String name,
     required String userRole,
@@ -455,6 +458,14 @@ class AuthProvider extends ChangeNotifier {
     String? city,
     String? shopId,
     String? referralCode,
+    String? shopName,
+    String? address,
+    String? country,
+    String? state,
+    String? district,
+    String? block,
+    String? village,
+    String? street,
   }) async {
     try {
       _setLoading(true);
@@ -473,10 +484,58 @@ class AuthProvider extends ChangeNotifier {
         city: city,
         shopId: shopId,
         referralCode: referralCode,
+        country: country,
+        state: state,
+        district: district,
+        block: block,
+        village: village,
+        street: street,
       );
 
       // Persist to Firestore
       await _userService.createOrUpdateUser(newUser);
+
+      // If barber role and shop details provided, create Barber document
+      if (userRole == 'barber' && shopName != null && shopName.isNotEmpty && 
+          address != null && address.isNotEmpty) {
+        try {
+          _logger.i('Creating Barber document during registration completion');
+          
+          // Build region map from address breakdown fields for customer discovery filtering
+          final region = <String, dynamic>{};
+          if (country != null && country.isNotEmpty) region['country'] = country;
+          if (state != null && state.isNotEmpty) region['state'] = state;
+          if (district != null && district.isNotEmpty) region['district'] = district;
+          if (block != null && block.isNotEmpty) region['block'] = block;
+          if (village != null && village.isNotEmpty) region['village'] = village;
+          if (street != null && street.isNotEmpty) region['street'] = street;
+          
+          final barber = Barber(
+            barberId: '', // Will be set by Firestore
+            shopName: shopName,
+            shopId: shopName,
+            ownerName: name,
+            phone: phone ?? '',
+            address: address,
+            createdAt: DateTime.now(),
+            region: region.isNotEmpty ? region : null,
+          );
+
+          if (referralCode != null && referralCode.isNotEmpty) {
+            await _barberService.createBarberWithAgent(
+              barber: barber,
+              referralCode: referralCode,
+            );
+          } else {
+            await _barberService.createBarber(barber, uid: _currentUser!.uid);
+          }
+          
+          _logger.i('Barber document created successfully during registration');
+        } catch (e) {
+          _logger.w('Warning: Could not create Barber document: $e');
+          // Continue - user profile is complete even if barber doc creation failed
+        }
+      }
 
       // Reload full profile from Firestore
       _currentUser = await _userService.getUserById(newUser.uid);
@@ -548,8 +607,13 @@ class AuthProvider extends ChangeNotifier {
     String? shopId,
     String? referralCode,
     int? yearsOfExperience,
-    List<String>? specialties,
     String? bio,
+    String? country,
+    String? district,
+    String? block,
+    String? village,
+    String? street,
+    String? nearbyLocation,
   }) async {
     try {
       _setLoading(true);
@@ -572,8 +636,13 @@ class AuthProvider extends ChangeNotifier {
           referralCode: referralCode ?? _currentUser!.referralCode,
           yearsOfExperience:
               yearsOfExperience ?? _currentUser!.yearsOfExperience,
-          specialties: specialties ?? _currentUser!.specialties,
           bio: bio ?? _currentUser!.bio,
+          country: country ?? _currentUser!.country,
+          district: district ?? _currentUser!.district,
+          block: block ?? _currentUser!.block,
+          village: village ?? _currentUser!.village,
+          street: street ?? _currentUser!.street,
+          nearbyLocation: nearbyLocation ?? _currentUser!.nearbyLocation,
         );
 
         await _userService.createOrUpdateUser(_currentUser!);

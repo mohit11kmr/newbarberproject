@@ -26,6 +26,14 @@ class User extends Equatable {
   final String? bio; // Professional biography
   final double? rating; // Barber's rating
   final int? reviewCount; // Number of reviews
+  
+  // Address breakdown fields (for barber registration)
+  final String? country; // Country
+  final String? district; // District
+  final String? block; // Block
+  final String? village; // Village/Town
+  final String? street; // Street address
+  final String? nearbyLocation; // Nearby location/landmark
 
   const User({
     required this.uid,
@@ -49,6 +57,12 @@ class User extends Equatable {
     this.bio,
     this.rating,
     this.reviewCount,
+    this.country,
+    this.district,
+    this.block,
+    this.village,
+    this.street,
+    this.nearbyLocation,
   });
 
   /// Getter for displayName (alias for name)
@@ -82,6 +96,12 @@ class User extends Equatable {
       bio: data['bio'],
       rating: data['rating'] is num ? (data['rating'] as num).toDouble() : null,
       reviewCount: data['reviewCount'],
+      country: data['country'],
+      district: data['district'],
+      block: data['block'],
+      village: data['village'],
+      street: data['street'],
+      nearbyLocation: data['nearbyLocation'],
     );
   }
 
@@ -115,6 +135,12 @@ class User extends Equatable {
     if (bio != null) data['bio'] = bio;
     if (rating != null) data['rating'] = rating;
     if (reviewCount != null) data['reviewCount'] = reviewCount;
+    if (country != null) data['country'] = country;
+    if (district != null) data['district'] = district;
+    if (block != null) data['block'] = block;
+    if (village != null) data['village'] = village;
+    if (street != null) data['street'] = street;
+    if (nearbyLocation != null) data['nearbyLocation'] = nearbyLocation;
 
     return data;
   }
@@ -141,6 +167,12 @@ class User extends Equatable {
     String? bio,
     double? rating,
     int? reviewCount,
+    String? country,
+    String? district,
+    String? block,
+    String? village,
+    String? street,
+    String? nearbyLocation,
   }) {
     return User(
       uid: uid ?? this.uid,
@@ -164,6 +196,12 @@ class User extends Equatable {
       bio: bio ?? this.bio,
       rating: rating ?? this.rating,
       reviewCount: reviewCount ?? this.reviewCount,
+      country: country ?? this.country,
+      district: district ?? this.district,
+      block: block ?? this.block,
+      village: village ?? this.village,
+      street: street ?? this.street,
+      nearbyLocation: nearbyLocation ?? this.nearbyLocation,
     );
   }
 

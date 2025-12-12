@@ -27,8 +27,17 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
   late TextEditingController _bioController;
   late TextEditingController _experienceController;
   late TextEditingController _ratingController;
+  
+  // Address breakdown controllers
+  late TextEditingController _countryController;
+  late TextEditingController _stateController;
+  late TextEditingController _districtController;
+  late TextEditingController _blockController;
+  late TextEditingController _villageController;
+  late TextEditingController _streetController;
+  late TextEditingController _nearbyLocationController;
+  
   bool _isLoading = false;
-  List<String> _selectedSpecialties = [];
   List<Service> _services = [];
   Barber? _barberDoc;
   bool _barberNotFound = false;
@@ -59,7 +68,18 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
     _ratingController = TextEditingController(
       text: user?.rating?.toString() ?? '',
     );
-    _selectedSpecialties = user?.specialties ?? [];
+    
+    // Initialize address breakdown controllers with user data
+    _countryController = TextEditingController(text: user?.country ?? '');
+    _stateController = TextEditingController(text: user?.state ?? '');
+    _districtController = TextEditingController(text: user?.district ?? '');
+    _blockController = TextEditingController(text: user?.block ?? '');
+    _villageController = TextEditingController(text: user?.village ?? '');
+    _streetController = TextEditingController(text: user?.street ?? '');
+    _nearbyLocationController = TextEditingController(text: user?.nearbyLocation ?? '');
+    
+    
+    // No specialties initialization needed - using services instead
     // Load barber document to get editable services
     final barberService = BarberService();
     () async {
@@ -100,6 +120,16 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
     _experienceController.dispose();
     _ratingController.dispose();
     _referralCodeController.dispose();
+    
+    // Dispose address breakdown controllers
+    _countryController.dispose();
+    _stateController.dispose();
+    _districtController.dispose();
+    _blockController.dispose();
+    _villageController.dispose();
+    _streetController.dispose();
+    _nearbyLocationController.dispose();
+    
     super.dispose();
   }
 
@@ -157,6 +187,45 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
   }
 
   Future<void> _saveProfile() async {
+    // Validate that all registration fields are filled for barbers
+    final authProvider = context.read<AuthProvider>();
+    if (authProvider.isBarber()) {
+      final name = _nameController.text.trim();
+      final phone = _phoneController.text.trim();
+      final shopName = _shopNameController.text.trim();
+      final address = _addressController.text.trim();
+      
+      // Address breakdown fields - all required for barber registration
+      final country = _countryController.text.trim();
+      final state = _stateController.text.trim();
+      final district = _districtController.text.trim();
+      final block = _blockController.text.trim();
+      final village = _villageController.text.trim();
+      final street = _streetController.text.trim();
+
+      if (name.isEmpty || 
+          phone.isEmpty || 
+          shopName.isEmpty || 
+          address.isEmpty ||
+          country.isEmpty ||
+          state.isEmpty ||
+          district.isEmpty ||
+          block.isEmpty ||
+          village.isEmpty ||
+          street.isEmpty ||
+          _services.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Please fill in all required fields marked with * and add at least 1 service',
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+    }
+
     setState(() => _isLoading = true);
 
     try {
@@ -169,7 +238,15 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
       final city = _addressController.text.trim();
       final bio = _bioController.text.trim();
       final years = int.tryParse(_experienceController.text.trim());
-      final specialties = _selectedSpecialties;
+      
+      // Address breakdown fields
+      final country = _countryController.text.trim();
+      final state = _stateController.text.trim();
+      final district = _districtController.text.trim();
+      final block = _blockController.text.trim();
+      final village = _villageController.text.trim();
+      final street = _streetController.text.trim();
+      final nearbyLocation = _nearbyLocationController.text.trim();
 
       bool ok = false;
 
@@ -181,7 +258,15 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
           phone: phone.isEmpty ? null : phone,
           city: city.isEmpty ? null : city,
           shopId: shopId.isEmpty ? null : shopId,
+          shopName: shopId.isEmpty ? null : shopId,
+          address: city.isEmpty ? null : city,
           referralCode: referralCode.isEmpty ? null : referralCode,
+          country: country.isEmpty ? null : country,
+          state: state.isEmpty ? null : state,
+          district: district.isEmpty ? null : district,
+          block: block.isEmpty ? null : block,
+          village: village.isEmpty ? null : village,
+          street: street.isEmpty ? null : street,
         );
         // After completing registration, persist any additional barber fields
         if (ok) {
@@ -192,8 +277,14 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
             shopId: shopId.isEmpty ? null : shopId,
             referralCode: referralCode.isEmpty ? null : referralCode,
             yearsOfExperience: years,
-            specialties: specialties.isEmpty ? null : specialties,
             bio: bio.isEmpty ? null : bio,
+            country: country.isEmpty ? null : country,
+            state: state.isEmpty ? null : state,
+            district: district.isEmpty ? null : district,
+            block: block.isEmpty ? null : block,
+            village: village.isEmpty ? null : village,
+            street: street.isEmpty ? null : street,
+            nearbyLocation: nearbyLocation.isEmpty ? null : nearbyLocation,
           );
         }
       } else {
@@ -205,8 +296,14 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
           shopId: shopId.isEmpty ? null : shopId,
           referralCode: referralCode.isEmpty ? null : referralCode,
           yearsOfExperience: years,
-          specialties: specialties.isEmpty ? null : specialties,
           bio: bio.isEmpty ? null : bio,
+          country: country.isEmpty ? null : country,
+          state: state.isEmpty ? null : state,
+          district: district.isEmpty ? null : district,
+          block: block.isEmpty ? null : block,
+          village: village.isEmpty ? null : village,
+          street: street.isEmpty ? null : street,
+          nearbyLocation: nearbyLocation.isEmpty ? null : nearbyLocation,
         );
       }
 
@@ -403,6 +500,34 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
 
               // Professional Information Section
               _buildSectionHeader('Professional Information'),
+              if (context.read<AuthProvider>().needsRegistration)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue[200]!),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info, color: Colors.blue[700], size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Complete all marked * fields to finish registration',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue[700],
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               const SizedBox(height: 12),
 
               // Name Field
@@ -411,6 +536,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 label: 'Full Name',
                 icon: Icons.person,
                 hint: 'Enter your full name',
+                isRequired: context.read<AuthProvider>().needsRegistration,
               ),
               const SizedBox(height: 16),
 
@@ -421,6 +547,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 icon: Icons.phone,
                 hint: 'Enter your phone number',
                 keyboardType: TextInputType.phone,
+                isRequired: context.read<AuthProvider>().needsRegistration,
               ),
               const SizedBox(height: 16),
 
@@ -456,6 +583,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 label: 'Shop/Salon Name',
                 icon: Icons.store,
                 hint: 'Enter shop name',
+                isRequired: context.read<AuthProvider>().needsRegistration,
               ),
               const SizedBox(height: 16),
 
@@ -475,6 +603,81 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 icon: Icons.location_on,
                 hint: 'Enter complete address',
                 maxLines: 2,
+                isRequired: context.read<AuthProvider>().needsRegistration,
+              ),
+              const SizedBox(height: 24),
+
+              // Address Breakdown Section
+              _buildSectionHeader('Address Details'),
+              const SizedBox(height: 12),
+
+              // Country Field
+              _buildTextField(
+                controller: _countryController,
+                label: 'Country',
+                icon: Icons.public,
+                hint: 'Enter country',
+                isRequired: context.read<AuthProvider>().needsRegistration,
+              ),
+              const SizedBox(height: 16),
+
+              // State Field
+              _buildTextField(
+                controller: _stateController,
+                label: 'State',
+                icon: Icons.location_city,
+                hint: 'Enter state',
+                isRequired: context.read<AuthProvider>().needsRegistration,
+              ),
+              const SizedBox(height: 16),
+
+              // District Field
+              _buildTextField(
+                controller: _districtController,
+                label: 'District',
+                icon: Icons.domain,
+                hint: 'Enter district',
+                isRequired: context.read<AuthProvider>().needsRegistration,
+              ),
+              const SizedBox(height: 16),
+
+              // Block Field
+              _buildTextField(
+                controller: _blockController,
+                label: 'Block',
+                icon: Icons.dashboard,
+                hint: 'Enter block',
+                isRequired: context.read<AuthProvider>().needsRegistration,
+              ),
+              const SizedBox(height: 16),
+
+              // Village/Town Field
+              _buildTextField(
+                controller: _villageController,
+                label: 'Village/Town',
+                icon: Icons.home_outlined,
+                hint: 'Enter village or town name',
+                isRequired: context.read<AuthProvider>().needsRegistration,
+              ),
+              const SizedBox(height: 16),
+
+              // Street Field
+              _buildTextField(
+                controller: _streetController,
+                label: 'Street Address',
+                icon: Icons.streetview,
+                hint: 'Enter street address',
+                isRequired: context.read<AuthProvider>().needsRegistration,
+              ),
+              const SizedBox(height: 16),
+
+              // Nearby Location Field (Optional)
+              _buildTextField(
+                controller: _nearbyLocationController,
+                label: 'Nearby Location (Landmark)',
+                icon: Icons.place,
+                hint: 'Enter nearby landmark or location (optional)',
+                isRequired: false,
               ),
               const SizedBox(height: 24),
 
@@ -489,15 +692,15 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                 hint: 'Tell customers about yourself and your expertise',
                 maxLines: 4,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
 
-              // Specialties Section
-              _buildSectionHeader('Specialties'),
-              const SizedBox(height: 12),
+              // Services Editor
+              _buildSectionHeader('Services *'),
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
                 child: Text(
-                  'Select all services you offer',
+                  'Add all services you offer (minimum 1 required)',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey[600],
@@ -505,66 +708,25 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                   ),
                 ),
               ),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children:
-                    [
-                      'Haircut',
-                      'Beard Trim',
-                      'Shaving',
-                      'Hair Coloring',
-                      'Styling',
-                      'Threading',
-                      'Hair Wash',
-                      'Head Massage',
-                    ].map((specialty) {
-                      final isSelected = _selectedSpecialties.contains(
-                        specialty,
-                      );
-                      return FilterChip(
-                        label: Text(specialty),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          setState(() {
-                            if (selected) {
-                              _selectedSpecialties.add(specialty);
-                            } else {
-                              _selectedSpecialties.remove(specialty);
-                            }
-                          });
-                        },
-                        backgroundColor: Colors.grey[200],
-                        selectedColor: const Color(
-                          0xFF1E88E5,
-                        ).withAlpha((0.2 * 255).round()),
-                        labelStyle: TextStyle(
-                          color: isSelected
-                              ? const Color(0xFF1E88E5)
-                              : Colors.grey[700],
-                          fontWeight: isSelected
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                        ),
-                      );
-                    }).toList(),
-              ),
-
-              const SizedBox(height: 16),
-
-              // Services Editor
-              _buildSectionHeader('Services'),
-              const SizedBox(height: 8),
-              if (_barberNotFound)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0),
-                  child: Text(
-                    'Barber record not found. Services cannot be edited until your shop is registered.',
-                    style: TextStyle(color: Colors.red[700], fontSize: 13),
-                  ),
-                ),
               Column(
                 children: [
+                  if (_services.isEmpty && context.read<AuthProvider>().needsRegistration)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12.0),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange[50],
+                          border: Border.all(color: Colors.orange, width: 1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          '⚠️ You must add at least one service to complete registration',
+                          style: TextStyle(color: Colors.orange[800], fontSize: 13),
+                        ),
+                      ),
+                    ),
                   ..._services.asMap().entries.map((entry) {
                     final idx = entry.key;
                     final service = entry.value;
@@ -592,7 +754,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: OutlinedButton.icon(
-                      onPressed: _barberNotFound ? null : () => _showAddEditServiceDialog(),
+                      onPressed: () => _showAddEditServiceDialog(),
                       icon: const Icon(Icons.add),
                       label: const Text('Add Service'),
                     ),
@@ -705,18 +867,32 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
     TextInputType keyboardType = TextInputType.text,
     int maxLines = 1,
     bool enabled = true,
+    bool isRequired = false,
     List<TextInputFormatter>? inputFormatters,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
+        Row(
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black87,
+              ),
+            ),
+            if (isRequired)
+              const Text(
+                ' *',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.red,
+                ),
+              ),
+          ],
         ),
         const SizedBox(height: 8),
         TextFormField(
@@ -728,7 +904,11 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Colors.grey),
+              borderSide: BorderSide(
+                color: isRequired && controller.text.isEmpty 
+                    ? Colors.red[300]! 
+                    : Colors.grey,
+              ),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
@@ -744,6 +924,7 @@ class _BarberEditProfileScreenState extends State<BarberEditProfileScreen> {
           keyboardType: keyboardType,
           maxLines: maxLines,
           inputFormatters: inputFormatters ?? [],
+          onChanged: (_) => setState(() {}), // Trigger rebuild to update border color
         ),
       ],
     );
