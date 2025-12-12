@@ -19,7 +19,6 @@ class Booking extends Equatable {
   final DateTime? completionTime;
   final String? cancellationReason;
   final String? cancelledBy; // customer, barber, system
-  final String? assignedTo; // team member id (optional)
   final double? rating;
   final String? review;
 
@@ -39,7 +38,6 @@ class Booking extends Equatable {
     this.completionTime,
     this.cancellationReason,
     this.cancelledBy,
-    this.assignedTo,
     this.rating,
     this.review,
   });
@@ -68,7 +66,6 @@ class Booking extends Equatable {
           : null,
       cancellationReason: data['cancellationReason'],
       cancelledBy: data['cancelledBy'],
-      assignedTo: data['assignedTo'],
       rating: data['rating']?.toDouble(),
       review: data['review'],
     );
@@ -92,7 +89,6 @@ class Booking extends Equatable {
           : null,
       'cancellationReason': cancellationReason,
       'cancelledBy': cancelledBy,
-      'assignedTo': assignedTo,
       'rating': rating,
       'review': review,
     };
@@ -114,7 +110,6 @@ class Booking extends Equatable {
     DateTime? completionTime,
     String? cancellationReason,
     String? cancelledBy,
-    String? assignedTo,
     double? rating,
     String? review,
   }) {
@@ -134,7 +129,6 @@ class Booking extends Equatable {
       completionTime: completionTime ?? this.completionTime,
       cancellationReason: cancellationReason ?? this.cancellationReason,
       cancelledBy: cancelledBy ?? this.cancelledBy,
-      assignedTo: assignedTo ?? this.assignedTo,
       rating: rating ?? this.rating,
       review: review ?? this.review,
     );
@@ -157,7 +151,6 @@ class Booking extends Equatable {
     completionTime,
     cancellationReason,
     cancelledBy,
-      assignedTo,
     rating,
     review,
   ];

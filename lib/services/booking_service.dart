@@ -16,9 +16,8 @@ class BookingService {
     String customerId,
     String barberId,
     List<Service> services,
-    int estimatedWaitTime, {
-    String? assignedTo,
-  }) async {
+    int estimatedWaitTime,
+  ) async {
     try {
       _logger.i(
         'Creating booking for customer: $customerId at barber: $barberId',
@@ -59,7 +58,6 @@ class BookingService {
           paymentStatus: AppConstants.paymentStatusPending,
           bookingTime: now,
           estimatedWaitTime: estimatedWaitTime,
-          assignedTo: assignedTo,
         );
 
         // Add booking to bookings collection
@@ -68,19 +66,17 @@ class BookingService {
           booking.toFirestore(),
         );
 
-        // Update barber's currentToken and queue (include assignedTo)
-        final queueEntry = {
-          'bookingId': bookingId,
-          'tokenNumber': newToken,
-          'customerId': customerId,
-          'status': AppConstants.bookingStatusWaiting,
-          'assignedTo': assignedTo,
-          'createdAt': Timestamp.now(),
-        };
-
+        // Update barber's currentToken and queue
         transaction.update(barberRef, {
           'currentToken': newToken,
-          'queue': FieldValue.arrayUnion([queueEntry]),
+          'queue': FieldValue.arrayUnion([
+            {
+              'bookingId': bookingId,
+              'tokenNumber': newToken,
+              'customerId': customerId,
+              'status': AppConstants.bookingStatusWaiting,
+            },
+          ]),
           'queueLength': FieldValue.increment(1),
         });
 

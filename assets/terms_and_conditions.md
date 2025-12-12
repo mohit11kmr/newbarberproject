@@ -79,8 +79,8 @@ These Terms are governed by applicable local laws. Any disputes shall be resolve
 ## 13. Contact Us
 
 If you have questions about these Terms & Conditions, please contact us at:
-- Email: support@bookbarber.com
-- Address: Book Barber Support Team
+- Email: mohitsikarwar123@gmail.com
+- Address: Sonkh
 
 ---
 
